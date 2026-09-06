@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arena de Provas - Fortnite Estudos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+        h1, h2 {
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .btn-materia, .opcao {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            width: 100%;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-materia:hover, .opcao:hover {
+            border-color: #00f2fe;
+            background: rgba(0, 242, 254, 0.1);
+            transform: translateY(-2px);
+        }
+        .opcao.correta {
+            background: rgba(16, 185, 129, 0.3) !important;
+            border-color: #10b981 !important;
+            color: #10b981;
+        }
+        .opcao.errada {
+            background: rgba(255, 75, 75, 0.3) !important;
+            border-color: #ff4b4b !important;
+            color: #ff4b4b;
+        }
+        .btn-proximo {
+            background: linear-gradient(45deg, #00f2fe, #4facfe);
+            border: none;
+            color: #0f0c29;
+            font-weight: 800;
+            font-size: 1rem;
+            padding: 14px;
+            width: 100%;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+            display: none;
+        }
+        .voltar {
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .voltar:hover { color: #00f2fe; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="painelConteudo">
+        <a href="index.html" class="voltar">← Voltar ao Menu Principal</a>
+        <h1 id="tituloTela">Escolha a Matéria da Batalha</h1>
+        <div id="listaOpcoes"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const nivel = urlParams.get('nivel') || '7ano';
+        const materiaSelecionada = urlParams.get('materia');
+
+        const nomesNiveis = {
+            '7ano': '7º Ano',
+            '8ano': '8º Ano',
+            '9ano': '9º Ano',
+            'enem': 'ENEM'
+        };
+
+        const materias = [
+            { nome: '📐 Matemática', id: 'matematica' },
+            { nome: '📖 Português & Redação', id: 'portugues' },
+            { nome: '⏳ História', id: 'historia' },
+            { nome: '🌍 Geografia', id: 'geografia' },
+            { nome: '🇬🇧 Inglês', id: 'ingles' }
+        ];
+
+        // Banco de Questões Estilo Batalha
+        const bancoQuestoes = {
+            matematica: [
+                { q: "Quanto é 7 x 8?", opcoes: ["54", "56", "64", "48"], certa: 1 },
+                { q: "Qual é a raiz quadrada de 144?", opcoes: ["10", "11", "12", "14"], certa: 2 }
+            ],
+            portugues: [
+                { q: "Qual palavra está grafada corretamente?", opcoes: ["Exceção", "Esceção", "Excessão", "Escessão"], certa: 0 },
+                { q: "O sujeito da frase 'O vento derrubou a árvore' é:", opcoes: ["A árvore", "O vento", "Derrubou", "Não há sujeito"], certa: 1 }
+            ],
+            historia: [
+                { q: "Em que ano o Brasil foi descoberto pelos portugueses?", opcoes: ["1500", "1822", "1889", "1530"], certa: 0 }
+            ],
+            geografia: [
+                { q: "Qual é o maior país do mundo em território?", opcoes: ["China", "Estados Unidos", "Canadá", "Rússia"], certa: 3 }
+            ],
+            ingles: [
+                { q: "Como se diz 'Maçã' em inglês?", opcoes: ["Banana", "Apple", "Orange", "Pineapple"], certa: 1 }
+            ]
+        };
+
+        const container = document.getElementById('listaOpcoes');
+        const titulo = document.getElementById('tituloTela');
+
+        if (!materiaSelecionada) {
+            // Se o usuário ainda não escolheu a matéria, mostra a lista
+            titulo.innerText = `Batalha de Provas - ${nomesNiveis[nivel] || 'Estudos'}`;
+            container.innerHTML = '';
+            
+            materias.forEach(mat => {
+                let btn = document.createElement('button');
+                btn.className = 'btn-materia';
+                btn.innerHTML = `${mat.nome} <span>➔</span>`;
+                btn.onclick = () => {
+                    window.location.href = `provas.html?nivel=${nivel}&materia=${mat.id}`;
+                };
+                container.appendChild(btn);
+            });
+        } else {
+            // Se já escolheu a matéria, roda o Quiz interativo
+            let questoes = bancoQuestoes[materiaSelecionada] || bancoQuestoes['matematica'];
+            let indiceAtual = 0;
+            let acertos = 0;
+
+            function carregarQuiz() {
+                if (indiceAtual >= questoes.length) {
+                    container.innerHTML = `
+                        <h2 style="text-align:center;">🏆 Vitória Royale nos Estudos!</h2>
+                        <p style="text-align:center; font-weight:600; font-size:1.1rem; margin:20px 0; color: #aaa;">Você acertou ${acertos} de ${questoes.length} desafios!</p>
+                        <button class="btn-proximo" style="display:block;" onclick="window.location.href='index.html'">Voltar ao Lobby</button>
+                    `;
+                    return;
+                }
+
+                let qAtual = questoes[indiceAtual];
+                titulo.innerText = `Desafio ${indiceAtual + 1} de ${questoes.length}`;
+                container.innerHTML = `
+                    <p style="font-weight:600; font-size:1.1rem; margin-bottom:20px;">${qAtual.q}</p>
+                    <div id="opcoesQuiz"></div>
+                    <button class="btn-proximo" id="btnAvancar" onclick="proximaQuestao()">Próxima Batalha</button>
+                `;
+
+                let opContainer = document.getElementById('opcoesQuiz');
+                qAtual.opcoes.forEach((opcao, index) => {
+                    let btn = document.createElement('button');
+                    btn.className = 'opcao';
+                    btn.innerText = opcao;
+                    btn.onclick = () => checarResposta(index, qAtual.certa, btn);
+                    opContainer.appendChild(btn);
+                });
+            }
+
+            window.checarResposta = function(selecionada, correta, elemento) {
+                let botoes = document.querySelectorAll('.opcao');
+                botoes.forEach(b => b.disabled = true);
+
+                if (selecionada === correta) {
+                    elemento.classList.add('correta');
+                    acertos++;
+                } else {
+                    elemento.classList.add('errada');
+                    botoes[correta].classList.add('correta');
+                }
+                document.getElementById('btnAvancar').style.display = 'block';
+            }
+
+            window.proximaQuestao = function() {
+                indiceAtual++;
+                carregarQuiz();
+            }
+
+            carregarQuiz();
+        }
+    </script>
+</body>
+</html>
+
